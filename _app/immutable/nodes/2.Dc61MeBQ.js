@@ -1,0 +1,1 @@
+import{A as e,h as t,p as n}from"../chunks/DVwOL615.js";var r=t(`<h1>Meta Data</h1> <p>checks meta data</p>`,1);function i(t){var i=r();e(2),n(t,i)}export{i as component};
