@@ -1,0 +1,1 @@
+import{h as e,p as t}from"../chunks/CLZHrJ5z.js";var n=e(`<main class="svelte-1uha8ag"><div class="image svelte-1uha8ag"></div> <div class="meta-info svelte-1uha8ag"></div></main>`);function r(e){var r=n();t(e,r)}export{r as component};
