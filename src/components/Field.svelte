@@ -18,12 +18,15 @@
   }
 
   .name {
-    width: var(--field-name-width);
+    min-width: var(--field-name-width);
     background-color: rgb(5, 5, 5);
     border-right: 1px solid var(--value-colour);
   }
 
   .value {
     flex: 1;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    white-space: nowrap;
   }
 </style>

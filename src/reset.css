@@ -43,7 +43,7 @@
   /* general */
   --radius: 0.6rem;
   scrollbar-color: var(--accent) var(--background);
-  scrollbar-gutter: stable;
+  /* scrollbar-gutter: stable; */
   scrollbar-width: thin;
 }
 
