@@ -63,9 +63,6 @@
 
 <style>
   .content {
-    --stripe-width: 10px;
-    --stripe1-colour: rgb(15, 15, 15);
-    --stripe2-colour: rgb(20, 20, 20);
     --value-colour: hsl(from var(--border) h s calc(l + 5));
     --border-width: 2px;
     --field-name-width: 100px;
@@ -77,6 +74,7 @@
     font-family: var(--font-roboto-mono);
 
     border: 2px solid var(--value-colour);
+    border-radius: var(--radius);
     @supports (corner-shape: bevel) {
       & {
         border-radius: var(--radius);
@@ -85,7 +83,6 @@
     }
 
     background-color: var(--background);
-    backdrop-filter: blur(4px);
     background: repeating-linear-gradient(
       135deg,
       var(--stripe1-colour),
