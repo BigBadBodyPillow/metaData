@@ -14,6 +14,8 @@
     if (previewUrl) URL.revokeObjectURL(previewUrl);
     previewUrl = URL.createObjectURL(file);
     imageName = file.name;
+
+    logMetaDate(file);
   }
 
   function handleFileChange(event: Event) {
@@ -37,6 +39,21 @@
     isDragging = false;
   }
 
+  function logMetaDate(file: File | undefined) {
+    if (!file) return;
+
+    const img = file;
+    console.log(img);
+    const name = img.name;
+    const time = new Date(img.lastModified);
+    const size = img.size / 1000 / 1000;
+    const type = img.type;
+    console.log('Name : ' + name);
+    console.log('Time : ' + time);
+    console.log('Size : ' + size + ' MB');
+    console.log('type : ' + type.split('/').slice(1).join('/'));
+  }
+
   onDestroy(() => {
     if (previewUrl) URL.revokeObjectURL(previewUrl);
   });
@@ -48,6 +65,7 @@
       <img class="preview" src={previewUrl} alt={`Preview of ${imageName}`} />
     </div>
   {/if}
+
   <div
     class="upload-field"
     class:dragging={isDragging}
@@ -75,6 +93,7 @@
       onchange={handleFileChange}
       aria-label={previewUrl ? 'change image' : 'upload image'}
     />
+
     {#if previewUrl}
       <div class="image-details">
         <span class="image-name" title={imageName}>{imageName}</span>
@@ -183,7 +202,8 @@
 
   .preview {
     max-width: 100%;
-    max-height: 100%;
+    max-height: 700px;
+
     object-fit: contain;
 
     background: var(--background);

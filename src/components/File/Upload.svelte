@@ -1,7 +1,6 @@
 <label class="drop" for="image-upload">
   <span class="upload-icon" aria-hidden="true">↑</span>
   <span class="title">Drop an image</span>
-  <!-- <span class="file-types">JPG, PNG, GIF, WebP</span> -->
 </label>
 
 <style>
