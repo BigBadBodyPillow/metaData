@@ -15,7 +15,7 @@
     previewUrl = URL.createObjectURL(file);
     imageName = file.name;
 
-    logMetaDate(file);
+    void logMetaData(file);
   }
 
   function handleFileChange(event: Event) {
@@ -39,19 +39,25 @@
     isDragging = false;
   }
 
-  function logMetaDate(file: File | undefined) {
-    if (!file) return;
+  async function logMetaData(file: File) {
+    const metadataUrl = URL.createObjectURL(file);
 
-    const img = file;
-    console.log(img);
-    const name = img.name;
-    const time = new Date(img.lastModified);
-    const size = img.size / 1000 / 1000;
-    const type = img.type;
-    console.log('Name : ' + name);
-    console.log('Time : ' + time);
-    console.log('Size : ' + size + ' MB');
-    console.log('type : ' + type.split('/').slice(1).join('/'));
+    try {
+      const { width, height } = await new Promise<{ width: number; height: number }>((resolve) => {
+        const image = new Image();
+        image.onload = () => resolve({ width: image.naturalWidth, height: image.naturalHeight });
+        image.src = metadataUrl;
+      });
+
+      console.log('Name : ' + file.name);
+      console.log('Time : ' + new Date(file.lastModified));
+      console.log('Size : ' + (file.size / 1000 / 1000).toFixed(2) + ' MB');
+      console.log('Type : ' + file.type.split('/').slice(1).join('/'));
+      console.log('Width : ' + width + 'px');
+      console.log('Height : ' + height + 'px');
+    } finally {
+      URL.revokeObjectURL(metadataUrl);
+    }
   }
 
   onDestroy(() => {
