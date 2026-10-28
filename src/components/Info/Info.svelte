@@ -1,51 +1,10 @@
 <script lang="ts">
-  import Field from '../Field.svelte';
+  import Field from './Field.svelte';
   import Fade from './Fade.svelte';
   import Spacer from './Spacer.svelte';
+  import metaData from '../metaData.json';
 
-  const fields = [
-    { name: 'Width', value: '100px' },
-    { name: 'Height', value: '100px' },
-    { name: 'a', value: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa' },
-    { name: 'b' },
-    { name: 'c' },
-    { name: 'd' },
-    { name: 'e' },
-    { name: 'f' },
-    { name: 'g' },
-    { name: 'h' },
-    { name: 'i' },
-    { name: 'j' },
-    { name: 'k' },
-    { name: 'l' },
-    { name: 'm' },
-    { name: 'n' },
-    { name: 'o' },
-    { name: 'p' },
-    { name: 'q' },
-    { name: 'r' },
-    { name: 's' },
-    { name: 't' },
-    { name: 'u' },
-    { name: 'v' },
-    { name: 'w' },
-    { name: 'x' },
-    { name: 'y' },
-    { name: 'z' },
-    { name: '1' },
-    { name: '2' },
-    { name: '3' },
-    { name: '4' },
-    { name: '5' },
-    { name: '6' },
-    { name: '7' },
-    { name: '8' },
-    { name: '9' },
-    { name: '10' },
-    { name: '11' },
-    { name: '12' },
-    { name: '13' }
-  ];
+  const { fields } = metaData;
 </script>
 
 <Fade>

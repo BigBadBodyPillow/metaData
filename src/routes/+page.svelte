@@ -1,5 +1,5 @@
 <script>
-  import File from '../components/File/File.svelte';
+  import File from '../components/Preview/File.svelte';
   import Info from '../components/Info/Info.svelte';
 </script>
 

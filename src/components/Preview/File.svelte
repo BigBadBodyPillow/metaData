@@ -68,7 +68,7 @@
 <div class="container">
   {#if previewUrl}
     <div class="preview-frame">
-      <img class="preview" src={previewUrl} alt={`Preview of ${imageName}`} />
+      <img class="preview" draggable="false" src={previewUrl} alt={`Preview of ${imageName}`} />
     </div>
   {/if}
 
@@ -204,6 +204,7 @@
 
     display: grid;
     place-items: center;
+    user-select: none;
   }
 
   .preview {
