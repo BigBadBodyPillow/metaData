@@ -1,19 +1,59 @@
 <script lang="ts">
+  import { onMount } from 'svelte';
   import Field from './Field.svelte';
   import Fade from './Fade.svelte';
   import Spacer from './Spacer.svelte';
   import metaData from '../metaData.json';
 
   const { fields } = metaData;
+  let contentElement: HTMLDivElement;
+  let placeholderCount = $state(1);
+
+  const displayFields = $derived([
+    ...fields,
+    ...Array.from({ length: placeholderCount }, () => ({ name: '', value: '' }))
+  ]);
+
+  onMount(() => {
+    const scrollContainer = contentElement.parentElement;
+    if (!scrollContainer) return;
+
+    function updatePlaceholderCount() {
+      if (!scrollContainer) return;
+
+      const field = contentElement.querySelector('.field');
+      if (!field) return;
+
+      const fieldHeight = field.getBoundingClientRect().height;
+      const styles = getComputedStyle(contentElement);
+      const spacerHeight = Number.parseFloat(styles.getPropertyValue('--border-width'));
+      const borderHeight =
+        Number.parseFloat(styles.borderTopWidth) + Number.parseFloat(styles.borderBottomWidth);
+      const minheight = 37;
+      const availableHeight = scrollContainer.clientHeight - borderHeight - minheight;
+      const requiredFieldCount = Math.ceil(
+        (availableHeight + spacerHeight) / (fieldHeight + spacerHeight)
+      );
+
+      placeholderCount = Math.max(0, requiredFieldCount - fields.length);
+    }
+
+    updatePlaceholderCount();
+
+    const resizeObserver = new ResizeObserver(updatePlaceholderCount);
+    resizeObserver.observe(scrollContainer);
+
+    return () => resizeObserver.disconnect();
+  });
 </script>
 
 <Fade>
-  <div class="content">
-    {#each fields as field, index (field.name)}
+  <div class="content" bind:this={contentElement}>
+    {#each displayFields as field, index (index)}
       <Field {...field} />
 
       <!-- not last -->
-      {#if index < fields.length - 1}
+      {#if index < displayFields.length - 1}
         <Spacer />
       {/if}
     {/each}

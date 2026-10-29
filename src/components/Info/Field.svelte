@@ -15,6 +15,7 @@
 
   .field > div {
     padding: var(--spacing-8);
+    min-height: 37px;
   }
 
   .name {
