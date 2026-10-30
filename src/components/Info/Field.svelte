@@ -19,9 +19,12 @@
   }
 
   .name {
-    min-width: var(--field-name-width);
+    width: var(--field-name-width);
     background-color: rgb(5, 5, 5);
     border-right: 1px solid var(--value-colour);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .value {

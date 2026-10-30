@@ -1,11 +1,16 @@
-<script>
+<script lang="ts">
+  import type { MetadataField } from '#lib';
   import File from '../components/Preview/File.svelte';
   import Info from '../components/Info/Info.svelte';
+
+  let metadataFields = $state<MetadataField[]>([]);
 </script>
 
 <main>
-  <File />
-  <Info />
+  <File onMetadata={(fields) => (metadataFields = fields)} />
+  {#if metadataFields.length > 0}
+    <Info fields={metadataFields} />
+  {/if}
 </main>
 
 <style>

@@ -3,12 +3,13 @@
   import Field from './Field.svelte';
   import Fade from './Fade.svelte';
   import Spacer from './Spacer.svelte';
-  import metaData from '../metaData.json';
+  import type { MetadataField } from '#lib';
 
-  const { fields } = metaData;
+  let { fields }: { fields: MetadataField[] } = $props();
   let contentElement: HTMLDivElement;
-  let placeholderCount = $state(1);
+  let requiredFieldCount = $state(0);
 
+  const placeholderCount = $derived(Math.max(0, requiredFieldCount - fields.length));
   const displayFields = $derived([
     ...fields,
     ...Array.from({ length: placeholderCount }, () => ({ name: '', value: '' }))
@@ -31,11 +32,9 @@
         Number.parseFloat(styles.borderTopWidth) + Number.parseFloat(styles.borderBottomWidth);
       const minheight = 37;
       const availableHeight = scrollContainer.clientHeight - borderHeight - minheight;
-      const requiredFieldCount = Math.ceil(
+      requiredFieldCount = Math.ceil(
         (availableHeight + spacerHeight) / (fieldHeight + spacerHeight)
       );
-
-      placeholderCount = Math.max(0, requiredFieldCount - fields.length);
     }
 
     updatePlaceholderCount();
@@ -64,7 +63,7 @@
   .content {
     --value-colour: hsl(from var(--border) h s calc(l + 5));
     --border-width: 2px;
-    --field-name-width: 100px;
+    --field-name-width: 140px;
 
     position: relative;
 

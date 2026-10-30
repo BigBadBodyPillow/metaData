@@ -1,12 +1,16 @@
 <script lang="ts">
   import { onDestroy } from 'svelte';
+  import exifr from 'exifr';
+  import type { MetadataField } from '#lib';
   // import Preview from './Preview.svelte';
   import Upload from './Upload.svelte';
 
+  let { onMetadata }: { onMetadata: (fields: MetadataField[]) => void } = $props();
   let input: HTMLInputElement;
   let previewUrl = $state<string | null>(null);
   let imageName = $state('');
   let isDragging = $state(false);
+  let metadataRequestId = 0;
 
   function selectImage(file: File | undefined) {
     if (!file) return;
@@ -14,8 +18,8 @@
     if (previewUrl) URL.revokeObjectURL(previewUrl);
     previewUrl = URL.createObjectURL(file);
     imageName = file.name;
-
-    void logMetaData(file);
+    const requestId = ++metadataRequestId;
+    void readMetadata(file, requestId);
   }
 
   function handleFileChange(event: Event) {
@@ -39,28 +43,168 @@
     isDragging = false;
   }
 
-  async function logMetaData(file: File) {
-    const metadataUrl = URL.createObjectURL(file);
+  function readImageDimensions(file: File) {
+    const imageUrl = URL.createObjectURL(file);
 
-    try {
-      const { width, height } = await new Promise<{ width: number; height: number }>((resolve) => {
-        const image = new Image();
-        image.onload = () => resolve({ width: image.naturalWidth, height: image.naturalHeight });
-        image.src = metadataUrl;
-      });
+    return new Promise<{ width: number; height: number }>((resolve, reject) => {
+      const image = new Image();
+      image.onload = () => resolve({ width: image.naturalWidth, height: image.naturalHeight });
+      image.onerror = () => reject(new Error('The image could not be decoded.'));
+      image.src = imageUrl;
+    }).finally(() => URL.revokeObjectURL(imageUrl));
+  }
 
-      console.log('Name : ' + file.name);
-      console.log('Time : ' + new Date(file.lastModified));
-      console.log('Size : ' + (file.size / 1000 / 1000).toFixed(2) + ' MB');
-      console.log('Type : ' + file.type.split('/').slice(1).join('/'));
-      console.log('Width : ' + width + 'px');
-      console.log('Height : ' + height + 'px');
-    } finally {
-      URL.revokeObjectURL(metadataUrl);
+  function gcd(a: number, b: number): number {
+    return b === 0 ? a : gcd(b, a % b);
+  }
+
+  function formatValue(value: unknown): string {
+    if (value instanceof Date) return value.toLocaleString();
+    if (Array.isArray(value)) return value.map(formatValue).join(', ');
+    if (typeof value === 'string' || typeof value === 'number') return String(value);
+    return '';
+  }
+
+  function formatExifName(name: string): string {
+    return name
+      .replace(/([A-Z])([A-Z][a-z])/g, '$1 $2')
+      .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
+      .replace(/^Exif\b/, 'EXIF');
+  }
+
+  function formatFileSize(size: number): string {
+    if (size < 1024) return `${size} bytes`;
+    if (size < 1024 * 1024) return `${(size / 1024).toFixed(2)} KB`;
+    return `${(size / (1024 * 1024)).toFixed(2)} MB`;
+  }
+
+  async function readMetadata(file: File, requestId: number) {
+    const dimensionsPromise = readImageDimensions(file).then(
+      (dimensions) => ({ dimensions, failed: false }),
+      () => ({ dimensions: undefined, failed: true })
+    );
+    const exifPromise = exifr.parse(file).then(
+      (metadata) => ({ metadata, failed: false }),
+      () => ({ metadata: undefined, failed: true })
+    );
+    const gpsPromise = exifr.gps(file).then(
+      (location) => ({ location, failed: false }),
+      () => ({ location: undefined, failed: true })
+    );
+
+    const [dimensionResult, exifResult, gpsResult] = await Promise.all([
+      dimensionsPromise,
+      exifPromise,
+      gpsPromise
+    ]);
+
+    if (requestId !== metadataRequestId) return;
+
+    const { dimensions } = dimensionResult;
+    const metadata = exifResult.metadata;
+    const fields: MetadataField[] = [
+      { name: 'Name', value: file.name },
+      { name: 'File size', value: formatFileSize(file.size) },
+      { name: 'Format', value: file.type || 'Unknown' },
+      {
+        name: 'Modified',
+        value: file.lastModified ? new Date(file.lastModified).toLocaleString() : 'Unknown'
+      },
+      {
+        name: 'Dimensions',
+        value: dimensions ? `${dimensions.width} × ${dimensions.height} px` : ''
+      }
+    ];
+
+    if (dimensions) {
+      const divisor = gcd(dimensions.width, dimensions.height);
+      fields.push(
+        {
+          name: 'Aspect ratio',
+          value: `${dimensions.width / divisor}:${dimensions.height / divisor}`
+        },
+        {
+          name: 'Megapixels',
+          value: `${((dimensions.width * dimensions.height) / 1_000_000).toFixed(2)} MP`
+        }
+      );
     }
+
+    const camera = [metadata?.Make, metadata?.Model].filter(Boolean).map(formatValue).join(' ');
+    if (camera) fields.push({ name: 'Camera', value: camera });
+
+    const capturedAt = formatValue(metadata?.DateTimeOriginal ?? metadata?.CreateDate);
+    if (capturedAt) fields.push({ name: 'Captured', value: capturedAt });
+
+    const descriptiveExifFields: [string, unknown][] = [
+      ['Description', metadata?.ImageDescription],
+      ['Creator', metadata?.Artist],
+      ['Copyright', metadata?.Copyright],
+      ['Software', metadata?.Software]
+    ];
+
+    for (const [name, rawValue] of descriptiveExifFields) {
+      const value = formatValue(rawValue);
+      if (value) fields.push({ name, value });
+    }
+
+    const optionalExifFields: [string, unknown, (value: string) => string][] = [
+      ['Lens', metadata?.LensModel, (value) => value],
+      ['Exposure', metadata?.ExposureTime, (value) => `${value} sec`],
+      ['Aperture', metadata?.FNumber, (value) => `f/${value}`],
+      ['ISO', metadata?.ISO, (value) => value],
+      ['Focal length', metadata?.FocalLength, (value) => `${value} mm`],
+      ['Orientation', metadata?.Orientation, (value) => value],
+      ['Color space', metadata?.ColorSpace, (value) => value],
+      ['Flash', metadata?.Flash, (value) => value],
+      ['White balance', metadata?.WhiteBalance, (value) => value]
+    ];
+
+    for (const [name, rawValue, format] of optionalExifFields) {
+      const value = formatValue(rawValue);
+      if (value) fields.push({ name, value: format(value) });
+    }
+
+    const displayedExifTags = new Set([
+      'Make',
+      'Model',
+      'ImageDescription',
+      'Artist',
+      'Copyright',
+      'Software',
+      'DateTimeOriginal',
+      'CreateDate',
+      'ExposureTime',
+      'FNumber',
+      'ISO',
+      'FocalLength',
+      'LensModel',
+      'Orientation',
+      'ColorSpace',
+      'Flash',
+      'WhiteBalance'
+    ]);
+
+    for (const [name, rawValue] of Object.entries(metadata ?? {})) {
+      if (displayedExifTags.has(name)) continue;
+
+      const value = formatValue(rawValue);
+      if (value) fields.push({ name: formatExifName(name), value });
+    }
+
+    const { location } = gpsResult;
+    if (location && Number.isFinite(location.latitude) && Number.isFinite(location.longitude)) {
+      fields.push({
+        name: 'GPS location',
+        value: `${location.latitude.toFixed(5)}, ${location.longitude.toFixed(5)}`
+      });
+    }
+
+    onMetadata(fields);
   }
 
   onDestroy(() => {
+    metadataRequestId += 1;
     if (previewUrl) URL.revokeObjectURL(previewUrl);
   });
 </script>
