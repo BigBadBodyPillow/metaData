@@ -1,3 +1,3 @@
-# todo
+# Meta data viewer
 
-- [x] make spacer same size as the notch radius
+looks at meta data from an image

@@ -105,7 +105,7 @@
     const fields: MetadataField[] = [
       { name: 'Name', value: file.name },
       { name: 'File size', value: formatFileSize(file.size) },
-      { name: 'Format', value: file.type || 'Unknown' },
+      { name: 'Format', value: file.type.split('/').pop() || 'Unknown' },
       {
         name: 'Modified',
         value: file.lastModified ? new Date(file.lastModified).toLocaleString() : 'Unknown'
